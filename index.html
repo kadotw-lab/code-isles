@@ -537,7 +537,7 @@ const clearLabTimers = () => { labTimers.forEach(clearInterval); labTimers = [];
 /* ============================== 3D 場景 ============================== */
 const R = 10;                 // 小島半徑
 const TOP = 2.26;             // 島面高度
-const D = Math.sqrt(3) * R + 16; // 相鄰小島中心距離（中間是海，靠渡輪與纜車往來）
+const D = Math.sqrt(3) * R + 26; // 相鄰小島中心距離（中間是海，靠渡輪與纜車往來）
 const deg = Math.PI / 180;
 const dirOf = (t) => new THREE.Vector3(Math.sin(t * deg), 0, Math.cos(t * deg));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -729,7 +729,7 @@ function ferry(A, Bp, color, seed) {
   const pa = dock(A, dir, color), pb = dock(Bp, dir.clone().negate(), color);
   const a1 = pa.clone().addScaledVector(dir, 1.9), b1 = pb.clone().addScaledVector(dir, -1.9);
   const mid = a1.clone().lerp(b1, 0.5); const out = mid.clone().setY(0).normalize();
-  const curve = new THREE.QuadraticBezierCurve3(a1, mid.clone().addScaledVector(out, 6.5), b1);
+  const curve = new THREE.QuadraticBezierCurve3(a1, mid.clone().addScaledVector(out, 8), b1);
   const f = new THREE.Group(); world.add(f);
   add(f, G('fhull', () => { const h = new THREE.CylinderGeometry(0.8, 0.55, 0.6, 6); h.scale(1, 1, 2.2); return h; }), '#FFF6EA', 0, 0.3, 0);
   B(f, 1.3, 0.12, 2.9, color, 0, 0.56, 0);
@@ -757,7 +757,7 @@ function cableway(S, hubCenter, color, seed) {
   const end = hubCenter.clone().addScaledVector(dir, -0.95);
   [[-0.3, 0], [0.3, 1]].forEach(([lane, k]) => {
     const a = S.clone().addScaledVector(perp, lane), b = end.clone().addScaledVector(perp, lane);
-    const pts = []; for (let i = 0; i <= 16; i++) { const t = i / 16; const q = a.clone().lerp(b, t); q.y -= Math.sin(Math.PI * t) * 1.4; pts.push(q); }
+    const sag = a.distanceTo(b) * 0.055; const pts = []; for (let i = 0; i <= 16; i++) { const t = i / 16; const q = a.clone().lerp(b, t); q.y -= Math.sin(Math.PI * t) * sag; pts.push(q); }
     const curve = new THREE.CatmullRomCurve3(pts);
     add(world, new THREE.TubeGeometry(curve, 48, 0.035, 4, false), '#3B3532', 0, 0, 0, { cast: false });
     const cab = new THREE.Group(); world.add(cab);
@@ -1057,7 +1057,7 @@ function buildHQ(g) {
 function scenery() {
   // 遠山
   for (let i = 0; i < 34; i++) {
-    const a = (i / 34) * Math.PI * 2 + Math.sin(i * 3.1) * 0.08; const rr = 190 + ((i * 37) % 50);
+    const a = (i / 34) * Math.PI * 2 + Math.sin(i * 3.1) * 0.08; const rr = 250 + ((i * 37) % 60);
     const h = 26 + ((i * 53) % 34); const r = 26 + ((i * 29) % 22);
     add(scene, G(`mt${i}`, () => new THREE.ConeGeometry(r, h, 6 + (i % 3))), ['#9DBB86', '#8FB07A', '#B4C99C', '#A8B98E'][i % 4], Math.sin(a) * rr, h / 2 - 4, -Math.cos(a) * rr, { cast: false, ry: i });
   }
@@ -1066,12 +1066,12 @@ function scenery() {
   for (let i = 0; i < 11; i++) {
     const c = new THREE.Group(); const n = 3 + (i % 3);
     for (let k = 0; k < n; k++) Sp(c, 2.4 + (k % 2) * 1.2, M('#FFFFFF', { emissive: '#FFFFFF', emissiveIntensity: 0.15 }), k * 2.6 - n * 1.2, (k % 2) * 0.8, (k % 3) * 0.6, { cast: false }, 1);
-    c.position.set(-150 + i * 29, 34 + (i % 4) * 6, -95 - ((i * 47) % 90)); scene.add(c); clouds.push(c);
+    c.position.set(-200 + i * 38, 38 + (i % 4) * 6, -130 - ((i * 47) % 100)); scene.add(c); clouds.push(c);
   }
-  anims.push((t, dt) => clouds.forEach((c, i) => { c.position.x += dt * (1.2 + (i % 3) * 0.4); if (c.position.x > 170) c.position.x = -170; }));
+  anims.push((t, dt) => clouds.forEach((c, i) => { c.position.x += dt * (1.2 + (i % 3) * 0.4); if (c.position.x > 230) c.position.x = -230; }));
   // 小島
   const islet = (x, z, r, top, decor) => { const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g); Cy(g, r * 1.02, r * 1.12, 1.6, 6, '#EAD7BA', 0, -0.6, 0); Cy(g, r, r, 0.1, 6, top, 0, 1.0, 0); decor(g); return g; };
-  islet(-66, -14, 3.4, '#EFDFC8', (g) => {
+  islet(-86, -18, 3.6, '#EFDFC8', (g) => {
     for (let k = 0; k < 5; k++) Cy(g, 0.7 - k * 0.07, 0.75 - k * 0.07, 0.8, 10, k % 2 ? '#D9483B' : '#FFFDF8', 0, 1.1 + k * 0.8, 0);
     add(g, G('lantern', () => new THREE.CylinderGeometry(0.48, 0.48, 0.6, 8)), LAMP, 0, 5.4, 0, { cast: false });
     Co(g, 0.62, 0.6, 8, '#D9483B', 0, 5.7, 0);
@@ -1079,10 +1079,10 @@ function scenery() {
     beam.geometry.translate(0, -15, 0); beam.rotation.z = Math.PI / 2; const piv = new THREE.Group(); piv.position.set(0, 5.4, 0); piv.add(beam); g.add(piv);
     anims.push((t) => { piv.rotation.y = t * 0.6; });
   });
-  islet(58, -40, 3.0, '#B9D89A', (g) => { tree(g, -1, 0, 0.9, 0); tree(g, 1.0, 0.6, 0.8, 1); tree(g, 0.2, -1.2, 0.7, 2); });
-  islet(54, 48, 3.0, '#F3E1C1', (g) => { [['#E2622B', -1], ['#E9B44C', 1]].forEach(([col, ox]) => { Cy(g, 0.05, 0.05, 1.4, 5, '#FFFDF8', ox, 1.1, 0); Co(g, 0.9, 0.4, 8, col, ox, 2.4, 0); }); B(g, 0.9, 0.08, 0.5, '#3E7CB1', 0, 1.1, 1.3); B(g, 0.9, 0.08, 0.5, '#7CB867', -1.2, 1.1, 1.4); });
-  islet(-58, 48, 2.6, '#D7C6AE', (g) => { Sp(g, 1.2, '#CDBBA4', -0.4, 1.4, 0, {}, 0); Sp(g, 0.9, '#BCA88F', 0.8, 1.2, 0.5, {}, 0); Sp(g, 0.6, '#D9C9B2', 0.2, 1.1, -0.9, {}, 0); });
-  islet(72, 8, 2.2, '#B9D89A', (g) => { tree(g, 0, 0, 1.1, 2); });
+  islet(75, -54, 3.2, '#B9D89A', (g) => { tree(g, -1, 0, 0.9, 0); tree(g, 1.0, 0.6, 0.8, 1); tree(g, 0.2, -1.2, 0.7, 2); });
+  islet(70, 64, 3.2, '#F3E1C1', (g) => { [['#E2622B', -1], ['#E9B44C', 1]].forEach(([col, ox]) => { Cy(g, 0.05, 0.05, 1.4, 5, '#FFFDF8', ox, 1.1, 0); Co(g, 0.9, 0.4, 8, col, ox, 2.4, 0); }); B(g, 0.9, 0.08, 0.5, '#3E7CB1', 0, 1.1, 1.3); B(g, 0.9, 0.08, 0.5, '#7CB867', -1.2, 1.1, 1.4); });
+  islet(-76, 62, 2.8, '#D7C6AE', (g) => { Sp(g, 1.2, '#CDBBA4', -0.4, 1.4, 0, {}, 0); Sp(g, 0.9, '#BCA88F', 0.8, 1.2, 0.5, {}, 0); Sp(g, 0.6, '#D9C9B2', 0.2, 1.1, -0.9, {}, 0); });
+  islet(94, 10, 2.4, '#B9D89A', (g) => { tree(g, 0, 0, 1.1, 2); });
   // 帆船
   const boats = [];
   for (let i = 0; i < 4; i++) {
@@ -1091,7 +1091,7 @@ function scenery() {
     Cy(b, 0.05, 0.05, 2.6, 5, '#7A5238', 0, 0.5, 0);
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0.8, 0.1, 0, 3.0, 0.1, 0, 0.8, 1.4], 3)); sg.computeVertexNormals();
     add(b, sg, M(i % 2 ? '#FFFDF8' : '#F7D9C4', { side: THREE.DoubleSide }), 0, 0, 0);
-    boats.push({ b, r: 80 + i * 6, sp: 0.022 + i * 0.006, ph: i * 1.7 });
+    boats.push({ b, r: 106 + i * 7, sp: 0.017 + i * 0.005, ph: i * 1.7 });
   }
   anims.push((t) => boats.forEach(({ b, r, sp, ph }) => { const a = t * sp + ph; b.position.set(Math.cos(a) * r, Math.sin(t * 1.4 + ph) * 0.12, Math.sin(a) * r); b.rotation.y = -a; b.rotation.z = Math.sin(t * 1.2 + ph) * 0.05; }));
 }
@@ -1151,8 +1151,8 @@ function animals() {
   anims.push((t) => {
     whales.forEach(({ w, fl, scale, lag, inset, spray }) => {
       const tt = t - lag; const a = tt * 0.034 - lag * 0.12;
-      const rx = 26 - inset, rz = 8.5 - inset * 0.4;
-      w.position.x = Math.cos(a) * rx; w.position.z = 66 + Math.sin(a) * rz;
+      const rx = 30 - inset, rz = 9.5 - inset * 0.4;
+      w.position.x = Math.cos(a) * rx; w.position.z = 84 + Math.sin(a) * rz;
       const yaw = Math.atan2(-rx * Math.sin(a), rz * Math.cos(a));
       const c = ((tt % 18) + 18) % 18; let y = -0.3 * scale, pitch = 0;
       if (c < 9) { y = -0.32 * scale + Math.sin(tt * 0.9) * 0.08; pitch = Math.sin(tt * 0.9) * 0.03; }
@@ -1175,7 +1175,7 @@ function animals() {
   // 海豚：一對輪流躍出水面
   const dols = [0, 1].map((i) => { const d = dolphinMesh(); d.userData.critter = 'dolphin'; scene.add(d); critters.push(d); return { d, ph: i * 0.5 }; });
   anims.push((t) => dols.forEach(({ d, ph }) => {
-    const a = t * 0.22 + ph * 0.9; const cx = 40, cz = 56, r = 7;
+    const a = t * 0.22 + ph * 0.9; const cx = 52, cz = 74, r = 7;
     d.position.x = cx + Math.cos(a) * r; d.position.z = cz + Math.sin(a) * r;
     const p = ((t * 0.42 + ph) % 1);
     if (p < 0.5) { const k = p / 0.5; d.position.y = Math.sin(Math.PI * k) * 1.9 - 0.25; d.rotation.set(-Math.cos(Math.PI * k) * 0.85, Math.atan2(-Math.sin(a), Math.cos(a)), 0); }
@@ -1184,8 +1184,8 @@ function animals() {
   // 跳躍的小魚與水花
   const FISHC = ['#F2A541', '#5BA3D9', '#C9D3DC', '#E86F5A', '#F2C14E'];
   const spots = [];
-  for (let k = 0; k < 6; k++) { const th = 60 * k + 12; spots.push(dirOf(th).multiplyScalar(17 + (k % 2) * 1.5)); }
-  for (let k = 0; k < 6; k++) { const th = 30 + 60 * k + (k % 2 ? 9 : -9); spots.push(dirOf(th).multiplyScalar(51 + (k % 3) * 2)); }
+  for (let k = 0; k < 6; k++) { const th = 60 * k + 12; spots.push(dirOf(th).multiplyScalar(21 + (k % 2) * 2)); }
+  for (let k = 0; k < 6; k++) { const th = 30 + 60 * k + (k % 2 ? 9 : -9); spots.push(dirOf(th).multiplyScalar(66 + (k % 3) * 3)); }
   const ringMat = new THREE.MeshBasicMaterial({ color: '#FFFFFF', transparent: true, opacity: 0, depthWrite: false });
   const fishes = spots.map((base, i) => {
     const f = fishMesh(FISHC[i % FISHC.length]); scene.add(f);
@@ -1204,7 +1204,7 @@ function animals() {
     ring.position.set(base.x + dir.x * at, 0.32, base.z + dir.z * at); ring.scale.setScalar(1 + sk * 2.4); ring.material.opacity = 0.7 * (1 - sk);
   }));
   // 海鷗：空中盤旋（拍翅＋滑翔），也有幾隻停在碼頭
-  const GULLS = [[0, 0, 15, 14, 0.32], [0, 0, 26, 17, -0.24], [-30, 20, 9, 12, 0.4], [32, -14, 11, 13, -0.36], [18, 42, 8, 11, 0.42], [-20, -36, 12, 16, 0.3], [40, 30, 10, 15, -0.3]];
+  const GULLS = [[0, 0, 19, 14, 0.28], [0, 0, 34, 17, -0.2], [-39, 26, 12, 12, 0.34], [42, -18, 14, 13, -0.3], [23, 56, 10, 11, 0.36], [-26, -47, 15, 16, 0.26], [52, 40, 13, 15, -0.26], [-8, 70, 11, 10, 0.32]];
   const flying = GULLS.map(([cx, cz, r, h, sp], i) => { const m = gullMesh(); m.g.userData.critter = 'gull'; m.g.rotation.order = 'YXZ'; scene.add(m.g); critters.push(m.g); return { ...m, cx, cz, r, h, sp, ph: i * 1.3 }; });
   anims.push((t) => flying.forEach(({ g, wings, cx, cz, r, h, sp, ph }) => {
     const a = t * sp + ph; g.position.set(cx + Math.cos(a) * r, h + Math.sin(t * 0.7 + ph) * 0.6, cz + Math.sin(a) * r);
@@ -1257,13 +1257,13 @@ function init3D() {
   camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 1, 900);
   hemi = new THREE.HemisphereLight('#ffffff', '#B09276', 1.6); scene.add(hemi);
   sun = new THREE.DirectionalLight('#FFF0DA', 2.8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -86, right: 86, top: 86, bottom: -86, near: 10, far: 320 });
+  Object.assign(sun.shadow.camera, { left: -108, right: 108, top: 108, bottom: -108, near: 10, far: 360 });
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; scene.add(sun); scene.add(sun.target);
   WIN = glowMat('#FFE9B0', '#FFC86B', 0.06, 1.0); LAMP = glowMat('#FFF2C9', '#FFD27A', 0.15, 1.3); GLASS = glowMat('#BFE3EA', '#FFE2A0', 0.03, 0.7);
   QUIZ_TEX = canvasTex(512, 300, (x, w, h) => { x.fillStyle = '#FFFDF8'; x.fillRect(0, 0, w, h); x.fillStyle = '#E2622B'; x.font = `700 170px ${FONT_STACK}`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('?', w / 2 - 110, h / 2 + 6); x.fillStyle = '#2B221D'; x.font = `700 58px ${FONT_STACK}`; x.fillText('自我', w / 2 + 90, h / 2 - 36); x.fillText('檢核', w / 2 + 90, h / 2 + 42); }).t;
 
   // water
-  const wg = new THREE.PlaneGeometry(520, 520, 72, 72); wg.rotateX(-Math.PI / 2);
+  const wg = new THREE.PlaneGeometry(720, 720, 92, 92); wg.rotateX(-Math.PI / 2);
   water = new THREE.Mesh(wg, new THREE.MeshStandardMaterial({ color: '#4FA3A3', flatShading: true, roughness: 0.42, metalness: 0.05 }));
   water.receiveShadow = true; scene.add(water);
   waterBase = Float32Array.from(wg.attributes.position.array);
@@ -1294,7 +1294,7 @@ function init3D() {
 
   anims.push((t, dt) => {
     ferries.forEach((fr) => {
-      const { u, fwd } = pingpong(t, 26, fr.ph); fr.curve.getPointAt(u, fr.f.position);
+      const { u, fwd } = pingpong(t, 34, fr.ph); fr.curve.getPointAt(u, fr.f.position);
       const tg = fr.curve.getTangentAt(Math.min(0.999, Math.max(0.001, u))); if (!fwd) tg.negate();
       const want = Math.atan2(tg.x, tg.z); if (fr.yaw === null) fr.yaw = want;
       let dY = ((want - fr.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI; fr.yaw += dY * Math.min(1, dt * 2.5);
@@ -1302,7 +1302,7 @@ function init3D() {
       fr.f.position.y = Math.sin(t * 1.6 + fr.ph * 5) * 0.1;
     });
     cabins.forEach((c) => {
-      const { u } = pingpong(t, 30, c.ph); c.curve.getPointAt(u, c.cab.position);
+      const { u } = pingpong(t, 40, c.ph); c.curve.getPointAt(u, c.cab.position);
       const tg = c.curve.getTangentAt(Math.min(0.999, Math.max(0.001, u))); c.cab.rotation.set(0, Math.atan2(tg.x, tg.z), Math.sin(t * 1.5 + c.ph * 6) * 0.05);
     });
     idlePeople.forEach(({ h, ph, ry }) => { h.rotation.y = ry + Math.sin(t * 0.6 + ph) * 0.5; });
@@ -1321,11 +1321,11 @@ function init3D() {
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08;
-  controls.minDistance = 18; controls.maxDistance = 340;
+  controls.minDistance = 18; controls.maxDistance = 430;
   controls.minPolarAngle = 22 * deg; controls.maxPolarAngle = 68 * deg;
   controls.screenSpacePanning = false; controls.rotateSpeed = 0.6; controls.zoomSpeed = 0.9;
   controls.addEventListener('start', () => { fly = null; });
-  controls.addEventListener('change', () => { const t = controls.target; const r = Math.hypot(t.x, t.z); if (r > 64) { t.x *= 64 / r; t.z *= 64 / r; } t.y = Math.min(Math.max(t.y, 0), 8); });
+  controls.addEventListener('change', () => { const t = controls.target; const r = Math.hypot(t.x, t.z); if (r > 84) { t.x *= 84 / r; t.z *= 84 / r; } t.y = Math.min(Math.max(t.y, 0), 8); });
 
   snapTime(); stepTime(1);
   resize();
@@ -1350,7 +1350,7 @@ function fitBox(wU, hU) {
 }
 function currentAz() { return Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z); }
 function viewAt(target, dist, polar, az) { return { target, pos: target.clone().add(V(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(dist)) }; }
-function overviewView() { return viewAt(V(0, 1, 3), Math.min(330, Math.max(90, fitBox(isNarrow() ? 84 : 120, 66))), 52 * deg, controls ? currentAz() : 0); }
+function overviewView() { return viewAt(V(0, 1, 3), Math.min(420, Math.max(110, fitBox(isNarrow() ? 108 : 150, 84))), 52 * deg, controls ? currentAz() : 0); }
 function islandView(id) { return viewAt(islands[id].pos.clone().setY(TOP + 0.8), Math.min(170, Math.max(30, fitBox(25, isNarrow() ? 22 : 17))), 49 * deg, currentAz()); }
 function pinView(id, n) { const p = islands[id].pins[n - 1].clone(); p.y -= 1.8; return viewAt(p, Math.min(130, Math.max(20, fitBox(13, isNarrow() ? 12 : 9))), 50 * deg, currentAz()); }
 
@@ -1786,7 +1786,7 @@ function frame() {
   off.x += (off.tx - off.x) * Math.min(1, dt * 6); off.y += (off.ty - off.y) * Math.min(1, dt * 6);
   camera.setViewOffset(innerWidth, innerHeight, off.x, off.y, innerWidth, innerHeight);
   const camDist = camera.position.distanceTo(controls.target);
-  scene.fog.near = camDist + 30; scene.fog.far = camDist + 260;
+  scene.fog.near = camDist + 40; scene.fog.far = camDist + 320;
   const r = 0.5 + off.y / innerHeight; hPass.uniforms.r.value = r; vPass.uniforms.r.value = r;
   composer.render();
   placeOverlay();
