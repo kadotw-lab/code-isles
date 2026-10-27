@@ -1797,9 +1797,11 @@ const Sound = (() => {
   function init() {
     const b = document.getElementById('btn-sound');
     b.querySelector('span').textContent = want() ? '聲音' : '靜音';
-    b.addEventListener('click', (e) => { e.stopPropagation(); setOn(!on); toast(on ? '背景聲音已開啟' : '已靜音'); });
-    const first = () => { removeEventListener('pointerdown', first, true); removeEventListener('keydown', first, true); if (want() && !on) setOn(true); };
-    addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
+    const EVTS = ['pointerdown', 'mousedown', 'touchend', 'keydown', 'click'];
+    const unhook = () => EVTS.forEach((t) => removeEventListener(t, first, true));
+    function first(e) { if (e.target && e.target.closest && e.target.closest('#btn-sound')) return; unhook(); if (want() && !on) setOn(true); }
+    EVTS.forEach((t) => addEventListener(t, first, true));
+    b.addEventListener('click', (e) => { e.stopPropagation(); unhook(); setOn(!on); toast(on ? '背景聲音已開啟' : '已靜音'); });
     document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
   }
   return { init };
