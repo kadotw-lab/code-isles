@@ -91,6 +91,11 @@ button{font:inherit;color:inherit}
 .dock button{width:66px;padding:10px 0 8px;border-radius:16px;border:0;background:var(--paper);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:3px;font:600 12.5px/1 var(--font-body);cursor:pointer}
 .dock button svg{width:20px;height:20px}
 .dock button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+#btn-sound .mx{display:none}
+#btn-sound[aria-pressed="false"] .mx{display:inline}
+#btn-sound[aria-pressed="false"] .wv{display:none}
+#btn-sound[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+#btn-sound[aria-pressed="true"] svg{color:var(--teal)}
 .dock button:hover{background:var(--paper-2)}
 .dock button[aria-pressed="true"]:hover{background:var(--ink)}
 .timebar{position:fixed;z-index:13;display:flex;gap:4px;padding:6px;border-radius:18px;background:var(--paper);box-shadow:var(--shadow)}
@@ -114,9 +119,26 @@ button{font:inherit;color:inherit}
   .brand{padding:8px 14px 8px 10px;gap:10px}
   .brand-name{font-size:19px}
   .brand-sub span{display:none}
+  .dock{gap:8px}
+  .dock button{width:58px;padding:8px 0 6px;font-size:11.5px}
+  .dock button svg{width:18px;height:18px}
 }
 @media (min-width:900px){
-  .sheet{left:max(16px,env(safe-area-inset-left,0px));top:calc(100px + env(safe-area-inset-top,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(430px,40vw);border-radius:24px}
+  .sheet{left:max(16px,env(safe-area-inset-left,0px));top:calc(100px + env(safe-area-inset-top,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:calc(50vw - 24px);border-radius:24px}
+  .sheet-top{padding:16px 18px 2px 34px}
+  .sheet-scroll{padding:8px 34px 34px;font-size:16px}
+  .sheet h2{font-size:32px}
+  .sheet h3{font-size:15.5px;margin-top:26px}
+  .sheet .sub{font-size:14.5px}
+  .sheet .lead{font-size:16.5px}
+  .sheet .stops{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sheet .codebox{font-size:14px}
+  .sheet .tbl{font-size:14.5px}
+  .sheet .opt{font-size:15px}
+  .sheet .cycle{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .sheet .chal{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sheet .timeline{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sheet .cells{grid-template-columns:repeat(8,minmax(0,1fr))}
 }
 
 /* sheet content */
@@ -285,6 +307,7 @@ ul.points{margin:0;padding-left:1.1em;display:grid;gap:6px}
   <button id="btn-list" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg>清單</button>
   <button id="btn-time" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>時間</button>
   <button id="btn-progress" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>進度</button>
+  <button id="btn-sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="wv" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span>聲音</span></button>
   <button id="btn-help" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>導覽</button>
 </nav>
 
@@ -1440,7 +1463,6 @@ function openIsland(id, fromHash) {
 }
 function renderIsland(id) {
   const w = WEEKS[id]; const i = WEEK_IDS.indexOf(id);
-  const fileBase = `第${w.no}週`;
   const html = `${weekHeader(id)}
   <p class="lead">${esc(w.task)}</p>
   <div class="motto">${esc(w.motto)}</div>
@@ -1449,7 +1471,6 @@ function renderIsland(id) {
   <h3>島上的 6 個站點</h3><div class="stops">${STOP_NAMES.map((nm, k) => `<button class="stop" type="button" data-n="${k + 1}"><span class="n">${k + 1}</span><span><b>${nm}</b><small>${esc(w.stopTitles[k])}</small></span><span class="go">›</span></button>`).join('')}</div>
   <h3>本週產出</h3><p style="margin:0">${w.out.map((f) => `<span class="fn">${f}</span>`).join(' ')}</p><p class="sub" style="margin-top:6px">${id === 'w6' ? '把六週的函式組裝成完整的超商系統。' : '請保存好，第 6 週系統整合會用到。'}</p>
   <h3>我的進度</h3>${progHTML(id)}
-  <h3>教師與學生資源</h3><ul class="files"><li>${fileBase} 自主學習教材（Word／PDF）</li><li>${fileBase} SRL 課堂三表（Word／PDF）</li><li>${fileBase} 科技輔助自主學習教案（Word／PDF）</li></ul>
   <div class="pager"><button class="btn" type="button" id="pg-prev" ${i === 0 ? 'disabled' : ''}>‹ 第 ${w.no - 1 || 1} 週</button><button class="btn primary" type="button" id="pg-next">${i === 5 ? '前往超商總部 ›' : `第 ${w.no + 1} 週 ›`}</button></div>`;
   showSheet(html, `<button type="button" data-go="overview">全景</button><span>/</span><span>Week ${pad2(w.no)}</span>`);
   body.querySelectorAll('.stop').forEach((b) => b.addEventListener('click', () => openPin(id, +b.dataset.n)));
@@ -1703,6 +1724,87 @@ const DEMOS = {
   },
 };
 
+
+/* ============================== 背景聲音（Web Audio 即時合成） ============================== */
+const Sound = (() => {
+  let ctx = null, master = null, on = false, timers = [];
+  const SKEY = 'codeIsles.sound';
+  const want = () => store.get(SKEY, 'on') !== 'off';
+  function noise(sec, brown) {
+    const len = Math.floor(ctx.sampleRate * sec); const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); let last = 0; for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.2; } else d[i] = w * 0.5; } }
+    return buf;
+  }
+  function loopNoise(brown, filterType, freq, q, base, depth, rate, phase) {
+    const src = ctx.createBufferSource(); src.buffer = noise(7, brown); src.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = filterType; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); g.gain.value = base;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = rate; const lg = ctx.createGain(); lg.gain.value = depth;
+    lfo.connect(lg).connect(g.gain);
+    const pan = ctx.createStereoPanner(); pan.pan.value = phase;
+    src.connect(f).connect(g).connect(pan).connect(master);
+    src.start(); lfo.start(ctx.currentTime + Math.abs(phase) * 3);
+  }
+  function gull() {
+    const now = ctx.currentTime + 0.05; const n = 2 + ((Math.random() * 3) | 0);
+    const pan = ctx.createStereoPanner(); pan.pan.value = Math.random() * 1.6 - 0.8;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 2.5;
+    const g = ctx.createGain(); g.gain.value = 0; const vol = 0.05 + Math.random() * 0.05;
+    const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+    const vib = ctx.createOscillator(); vib.frequency.value = 26; const vg = ctx.createGain(); vg.gain.value = 70; vib.connect(vg).connect(osc.frequency);
+    for (let k = 0; k < n; k++) {
+      const t0 = now + k * (0.3 + Math.random() * 0.08); const top = 2300 + Math.random() * 500;
+      osc.frequency.setValueAtTime(1500, t0); osc.frequency.linearRampToValueAtTime(top, t0 + 0.06); osc.frequency.exponentialRampToValueAtTime(850, t0 + 0.27);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.03); g.gain.linearRampToValueAtTime(0, t0 + 0.27);
+    }
+    osc.connect(bp).connect(g).connect(pan).connect(master);
+    const end = now + n * 0.4 + 0.2; osc.start(now); vib.start(now); osc.stop(end); vib.stop(end);
+  }
+  function horn() {
+    const now = ctx.currentTime + 0.05; const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
+    const g = ctx.createGain(); g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.07, now + 0.25); g.gain.setValueAtTime(0.07, now + 1.5); g.gain.linearRampToValueAtTime(0, now + 2.2);
+    const pan = ctx.createStereoPanner(); pan.pan.value = Math.random() * 1.2 - 0.6;
+    [110, 165].forEach((f) => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.connect(lp); o.start(now); o.stop(now + 2.3); });
+    lp.connect(g).connect(pan).connect(master);
+  }
+  function whale() {
+    const now = ctx.currentTime + 0.05; const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(170, now); o.frequency.linearRampToValueAtTime(330, now + 1.4); o.frequency.linearRampToValueAtTime(140, now + 3.4);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.06, now + 0.6); g.gain.linearRampToValueAtTime(0.045, now + 2.6); g.gain.linearRampToValueAtTime(0, now + 3.5);
+    const dl = ctx.createDelay(); dl.delayTime.value = 0.42; const fb = ctx.createGain(); fb.gain.value = 0.35; dl.connect(fb).connect(dl);
+    o.connect(g); g.connect(master); g.connect(dl); dl.connect(master); o.start(now); o.stop(now + 3.6);
+  }
+  function every(fn, min, max) { const tick = () => { if (on && !document.hidden) fn(); timers.push(setTimeout(tick, (min + Math.random() * (max - min)) * 1000)); }; timers.push(setTimeout(tick, (min * 0.4 + Math.random() * min) * 1000)); }
+  function build() {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    loopNoise(true, 'lowpass', 520, 0.7, 0.5, 0.32, 0.085, -0.35);
+    loopNoise(true, 'lowpass', 680, 0.7, 0.4, 0.28, 0.115, 0.35);
+    loopNoise(false, 'bandpass', 1500, 0.6, 0.035, 0.03, 0.1, 0);
+    every(() => { if (timeKey !== 'night' || Math.random() < 0.25) gull(); }, 5, 12);
+    every(horn, 40, 70);
+    every(whale, 50, 90);
+  }
+  function setOn(v) {
+    on = v; store.set(SKEY, v ? 'on' : 'off');
+    const b = document.getElementById('btn-sound'); b.setAttribute('aria-pressed', String(v)); b.querySelector('span').textContent = v ? '聲音' : '靜音';
+    b.setAttribute('aria-label', v ? '背景聲音：開啟，按下靜音' : '背景聲音：靜音，按下開啟');
+    if (v) {
+      try { if (!ctx) build(); } catch (e) { on = false; b.setAttribute('aria-pressed', 'false'); return; }
+      ctx.resume(); const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0.9, t + 2.5);
+    } else if (ctx) { const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0, t + 0.4); }
+  }
+  function init() {
+    const b = document.getElementById('btn-sound');
+    b.querySelector('span').textContent = want() ? '聲音' : '靜音';
+    b.addEventListener('click', (e) => { e.stopPropagation(); setOn(!on); toast(on ? '背景聲音已開啟' : '已靜音'); });
+    const first = () => { removeEventListener('pointerdown', first, true); removeEventListener('keydown', first, true); if (want() && !on) setOn(true); };
+    addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
+    document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else if (on) ctx.resume(); });
+  }
+  return { init };
+})();
+
 /* ============================== 導覽、時間、控制 ============================== */
 const COACH = [
   ['Code Isles / 01', '每座島是一週課程', '六座六角形小島繞著中央的超商總部排成一圈，從第 1 週的庫存盤點島，一路走到第 6 週的收銀找零島。點一座島，或用右側清單探索。'],
@@ -1799,7 +1901,7 @@ function boot() {
     console.error(err); has3D = false;
     const fb = document.createElement('div'); fb.className = 'fallback'; fb.innerHTML = '<div><h2>這台裝置無法顯示 3D 城市</h2><p>仍然可以用右側的「清單」瀏覽六週課程的所有內容。</p></div>'; $('#stage').appendChild(fb); overlay.hidden = true;
   }
-  buildOverlay(); syncTimeButtons();
+  buildOverlay(); syncTimeButtons(); Sound.init();
   addEventListener('resize', () => { if (has3D) { targetOffset(); resize(); } if (!timebar.hidden) placeTimebar(); });
   new ResizeObserver(() => targetOffset()).observe(sheet);
   if (has3D) { bindPicking(); requestAnimationFrame(frame); setTimeout(() => { $('#hint').hidden = true; }, 9000); } else { $('#hint').hidden = true; renderList(); }
