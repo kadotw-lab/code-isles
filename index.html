@@ -1362,7 +1362,7 @@ const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 function flyTo(view, dur = 1.25) {
   if (!has3D) return;
   if (reduceMotion) { camera.position.copy(view.pos); controls.target.copy(view.target); return; }
-  fly = { t: 0, dur, fT: controls.target.clone(), tT: view.target, fP: camera.position.clone(), tP: view.pos };
+  fly = { t0: performance.now(), dur, fT: controls.target.clone(), tT: view.target, fP: camera.position.clone(), tP: view.pos };
 }
 const isNarrow = () => innerWidth < 900;
 function fitBox(wU, hU) {
@@ -1879,13 +1879,13 @@ function bindPicking() {
 /* main loop */
 const clock = new THREE.Clock();
 function frame() {
-  const dt = Math.min(0.05, clock.getDelta());
+  const rawDt = clock.getDelta(); const dt = Math.min(0.05, rawDt); const uiDt = Math.min(0.25, rawDt);
   if (!paused) simT += dt;
   if (!paused) anims.forEach((f) => f(simT, dt));
   stepTime(dt);
-  if (fly) { fly.t += dt; const k = ease(Math.min(1, fly.t / fly.dur)); controls.target.lerpVectors(fly.fT, fly.tT, k); camera.position.lerpVectors(fly.fP, fly.tP, k); if (k >= 1) fly = null; }
+  if (fly) { const k = ease(Math.min(1, (performance.now() - fly.t0) / 1000 / fly.dur)); controls.target.lerpVectors(fly.fT, fly.tT, k); camera.position.lerpVectors(fly.fP, fly.tP, k); if (k >= 1) fly = null; }
   controls.update();
-  off.x += (off.tx - off.x) * Math.min(1, dt * 6); off.y += (off.ty - off.y) * Math.min(1, dt * 6);
+  off.x += (off.tx - off.x) * Math.min(1, uiDt * 6); off.y += (off.ty - off.y) * Math.min(1, uiDt * 6);
   camera.setViewOffset(innerWidth, innerHeight, off.x, off.y, innerWidth, innerHeight);
   const camDist = camera.position.distanceTo(controls.target);
   scene.fog.near = camDist + 40; scene.fog.far = camDist + 320;
