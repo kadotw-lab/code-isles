@@ -1146,13 +1146,13 @@ function animals() {
     const spray = Array.from({ length: 9 }, () => { const m = new THREE.Mesh(G('spray', () => new THREE.IcosahedronGeometry(0.28, 0)), sprayMat.clone()); m.visible = false; scene.add(m); return m; });
     critters.push(w); return { w, fl, scale, lag, inset, spray };
   };
-  const whales = [makeWhale(1.0, 0, 0), makeWhale(0.48, 0.7, 3.2)];
+  const whales = [makeWhale(1.3, 0, 0), makeWhale(0.6, 0.7, 3.4)];
   const blow = new THREE.Vector3();
   anims.push((t) => {
     whales.forEach(({ w, fl, scale, lag, inset, spray }) => {
       const tt = t - lag; const a = tt * 0.034 - lag * 0.12;
-      const rx = 30 - inset, rz = 9.5 - inset * 0.4;
-      w.position.x = Math.cos(a) * rx; w.position.z = 84 + Math.sin(a) * rz;
+      const rx = 28 - inset, rz = 7.5 - inset * 0.4;
+      w.position.x = Math.cos(a) * rx; w.position.z = 66 + Math.sin(a) * rz;
       const yaw = Math.atan2(-rx * Math.sin(a), rz * Math.cos(a));
       const c = ((tt % 18) + 18) % 18; let y = -0.3 * scale, pitch = 0;
       if (c < 9) { y = -0.32 * scale + Math.sin(tt * 0.9) * 0.08; pitch = Math.sin(tt * 0.9) * 0.03; }
