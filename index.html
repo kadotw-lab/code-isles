@@ -255,7 +255,7 @@ ul.points{margin:0;padding-left:1.1em;display:grid;gap:6px}
 .coach-dots i{width:22px;height:6px;border-radius:3px;background:var(--line)}
 .coach-dots i.on{background:var(--accent)}
 .coach-btns{display:flex;justify-content:space-between;gap:10px}
-.toast{position:fixed;z-index:45;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.toast{position:fixed;z-index:45;left:50%;top:calc(18px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:18px;font-weight:600;font-size:14px;line-height:1.5;text-align:center;box-shadow:var(--shadow);width:max-content;max-width:min(520px,calc(100% - 32px))}
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));text-align:center;color:var(--muted);background:var(--paper)}
 .hint{position:fixed;z-index:6;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font:600 12px/1 var(--font-body);color:#2B221D;background:rgba(255,249,241,.82);padding:8px 14px;border-radius:999px;pointer-events:none;white-space:nowrap}
 @media (max-width:899px){.hint{display:none}.toast{top:calc(84px + env(safe-area-inset-top,0px))}}
@@ -530,7 +530,7 @@ let progress = store.get(PKEY, {});
 const isDone = (id) => PROG_ITEMS.every(([k]) => progress[id] && progress[id][k]);
 function setProg(id, k, v) { progress = { ...progress, [id]: { ...(progress[id] || {}), [k]: v } }; store.set(PKEY, progress); refreshDoneMarks(); }
 let toastTimer;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2400); }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, msg.length > 30 ? 4200 : 2400); }
 let labTimers = [];
 const clearLabTimers = () => { labTimers.forEach(clearInterval); labTimers = []; };
 
@@ -719,6 +719,7 @@ function dock(A, dir, color) {
   for (const px of [-0.8, 0.8]) Cy(g, 0.12, 0.14, 0.32, 6, '#3B3532', px, 0.98, 12.65);
   Cy(g, 0.05, 0.06, 1.5, 5, '#4A403A', 0.85, 0.98, 10.5); add(g, G('lampb', () => new THREE.IcosahedronGeometry(0.2, 0)), LAMP, 0.85, 2.55, 10.5, { cast: false });
   B(g, 0.06, 0.55, 0.9, color, -0.9, 1.0, 11.0);
+  perches.push(A.clone().addScaledVector(dir, 12.65).addScaledVector(V(dir.z, 0, -dir.x), 0.8).setY(1.38));
   const h = person(SHIRT[(Math.abs(Math.round(A.x + A.z)) + 2) % SHIRT.length], Math.abs(Math.round(A.x)) % 4); h.position.set(-0.35, 0.98, 11.7); h.rotation.y = Math.PI; g.add(h); idlePeople.push({ h, ph: A.x, ry: Math.PI });
   return A.clone().addScaledVector(dir, 12.9).setY(0);
 }
@@ -1095,6 +1096,131 @@ function scenery() {
   anims.push((t) => boats.forEach(({ b, r, sp, ph }) => { const a = t * sp + ph; b.position.set(Math.cos(a) * r, Math.sin(t * 1.4 + ph) * 0.12, Math.sin(a) * r); b.rotation.y = -a; b.rotation.z = Math.sin(t * 1.2 + ph) * 0.05; }));
 }
 
+
+/* ---------- sea life: whales, dolphins, jumping fish, seagulls ---------- */
+const perches = [];
+const critters = [];
+function whaleMesh() {
+  const w = new THREE.Group(); w.rotation.order = 'YXZ';
+  const skin = M('#4F7398'), belly = M('#DCE6EE');
+  add(w, G('wbody', () => { const g = new THREE.IcosahedronGeometry(1, 1); g.scale(1.25, 1.0, 3.4); return g; }), skin, 0, 0, 0);
+  add(w, G('wbelly', () => { const g = new THREE.IcosahedronGeometry(1, 1); g.scale(1.08, 0.72, 3.0); return g; }), belly, 0, -0.36, 0.25);
+  add(w, G('wstalk', () => { const g = new THREE.CylinderGeometry(0.55, 0.2, 2.6, 6); g.rotateX(Math.PI / 2); return g; }), skin, 0, 0.05, -4.2);
+  const fl = new THREE.Group(); fl.position.set(0, 0.05, -5.4); w.add(fl);
+  add(fl, G('wfluke', () => { const sh = new THREE.Shape(); sh.moveTo(0, 0.3); sh.quadraticCurveTo(1.0, 0.25, 1.9, -0.9); sh.quadraticCurveTo(1.0, -0.6, 0, -0.35); sh.quadraticCurveTo(-1.0, -0.6, -1.9, -0.9); sh.quadraticCurveTo(-1.0, 0.25, 0, 0.3); const g = new THREE.ExtrudeGeometry(sh, { depth: 0.14, bevelEnabled: false }); g.rotateX(Math.PI / 2); return g; }), skin, 0, 0.07, 0);
+  for (const sx of [-1, 1]) add(w, G('wflip', () => new THREE.BoxGeometry(1.6, 0.1, 0.6)), skin, sx * 1.35, -0.45, 1.2, { rz: sx * 0.5, ry: sx * 0.45 });
+  for (const sx of [-1, 1]) Sp(w, 0.09, '#1E1A1A', sx * 1.0, 0.08, 2.35, { cast: false }, 0);
+  return { w, fl };
+}
+function dolphinMesh() {
+  const d = new THREE.Group(); d.rotation.order = 'YXZ';
+  const skin = M('#7F9BB5');
+  add(d, G('dbody', () => { const g = new THREE.IcosahedronGeometry(1, 1); g.scale(0.42, 0.42, 1.45); return g; }), skin, 0, 0, 0);
+  add(d, G('dbelly', () => { const g = new THREE.IcosahedronGeometry(1, 1); g.scale(0.34, 0.3, 1.25); return g; }), M('#E6EDF2'), 0, -0.14, 0.05);
+  add(d, G('dnose', () => { const g = new THREE.ConeGeometry(0.14, 0.5, 6); g.rotateX(Math.PI / 2); return g; }), skin, 0, -0.05, 1.55);
+  add(d, G('dfin', () => { const g = new THREE.ConeGeometry(0.22, 0.5, 4); g.scale(0.25, 1, 1); return g; }), skin, 0, 0.55, -0.15, { rx: -0.5 });
+  add(d, G('dtail', () => new THREE.BoxGeometry(0.9, 0.06, 0.3)), skin, 0, 0, -1.55);
+  return d;
+}
+function fishMesh(color) {
+  const f = new THREE.Group(); f.rotation.order = 'YXZ';
+  add(f, G('fbody', () => { const g = new THREE.IcosahedronGeometry(0.22, 0); g.scale(0.7, 1, 2.0); return g; }), color, 0, 0, 0, { cast: false });
+  add(f, G('ftail', () => { const g = new THREE.ConeGeometry(0.2, 0.3, 4); g.rotateX(-Math.PI / 2); g.scale(0.3, 1, 1); return g; }), color, 0, 0, -0.55, { cast: false });
+  return f;
+}
+function gullMesh() {
+  const g = new THREE.Group();
+  add(g, G('gbody', () => { const b = new THREE.IcosahedronGeometry(0.35, 0); b.scale(0.8, 0.7, 1.7); return b; }), '#FBFAF7', 0, 0, 0);
+  Sp(g, 0.22, '#FBFAF7', 0, 0.12, 0.55, {}, 0);
+  add(g, G('gbeak', () => { const b = new THREE.ConeGeometry(0.06, 0.24, 4); b.rotateX(Math.PI / 2); return b; }), '#F2A541', 0, 0.08, 0.86, { cast: false });
+  B(g, 0.3, 0.05, 0.3, '#B9C2C9', 0, -0.02, -0.65);
+  const wings = [-1, 1].map((sx) => { const pv = new THREE.Group(); pv.position.set(sx * 0.2, 0.08, 0); g.add(pv); B(pv, 1.25, 0.05, 0.45, '#F2F2EE', sx * 0.62, 0, 0); B(pv, 0.45, 0.05, 0.36, '#6E7A84', sx * 1.4, 0, -0.03); return { pv, sx }; });
+  return { g, wings };
+}
+const TIPS = WEEK_IDS.map((id) => `第 ${WEEKS[id].no} 週：${WEEKS[id].motto}`);
+function animals() {
+  // 鯨魚母子：在群島前方的海面巡游，浮出換氣、噴水、下潛時翹起尾鰭
+  const sprayMat = new THREE.MeshBasicMaterial({ color: '#FFFFFF', transparent: true, opacity: 0.8, depthWrite: false });
+  const makeWhale = (scale, lag, inset) => {
+    const { w, fl } = whaleMesh(); w.scale.setScalar(scale); w.userData.critter = 'whale'; scene.add(w);
+    const spray = Array.from({ length: 9 }, () => { const m = new THREE.Mesh(G('spray', () => new THREE.IcosahedronGeometry(0.28, 0)), sprayMat.clone()); m.visible = false; scene.add(m); return m; });
+    critters.push(w); return { w, fl, scale, lag, inset, spray };
+  };
+  const whales = [makeWhale(1.0, 0, 0), makeWhale(0.48, 0.7, 3.2)];
+  const blow = new THREE.Vector3();
+  anims.push((t) => {
+    whales.forEach(({ w, fl, scale, lag, inset, spray }) => {
+      const tt = t - lag; const a = tt * 0.034 - lag * 0.12;
+      const rx = 26 - inset, rz = 8.5 - inset * 0.4;
+      w.position.x = Math.cos(a) * rx; w.position.z = 66 + Math.sin(a) * rz;
+      const yaw = Math.atan2(-rx * Math.sin(a), rz * Math.cos(a));
+      const c = ((tt % 18) + 18) % 18; let y = -0.3 * scale, pitch = 0;
+      if (c < 9) { y = -0.32 * scale + Math.sin(tt * 0.9) * 0.08; pitch = Math.sin(tt * 0.9) * 0.03; }
+      else if (c < 12) { const k = (c - 9) / 3; pitch = Math.sin(k * Math.PI * 0.5) * 0.55; y = -0.3 * scale - k * k * 3.2 * scale; }
+      else if (c < 16.5) { pitch = 0.2 * (1 - (c - 12) / 4.5); y = -4 * scale; }
+      else { const k = (c - 16.5) / 1.5; pitch = -0.25 * Math.sin(k * Math.PI); y = -4 * scale + k * 3.7 * scale; }
+      w.position.y = y; w.rotation.set(pitch, yaw, Math.sin(tt * 0.5) * 0.04);
+      fl.rotation.x = Math.sin(tt * 1.3) * 0.22 + (c > 9 && c < 12 ? -0.35 : 0);
+      const spraying = c > 1.2 && c < 4.2;
+      blow.set(0, 1.0, 1.6); w.localToWorld(blow);
+      spray.forEach((m, i) => {
+        m.visible = spraying;
+        if (!spraying) return;
+        const k = ((c - 1.2) * 1.4 + i / spray.length) % 1;
+        m.position.set(blow.x + Math.sin(i * 2.4) * k * 0.7 * scale, blow.y + k * 3.4 * scale, blow.z + Math.cos(i * 2.4) * k * 0.7 * scale);
+        m.scale.setScalar((0.45 + k * 0.9) * scale); m.material.opacity = 0.85 * (1 - k);
+      });
+    });
+  });
+  // 海豚：一對輪流躍出水面
+  const dols = [0, 1].map((i) => { const d = dolphinMesh(); d.userData.critter = 'dolphin'; scene.add(d); critters.push(d); return { d, ph: i * 0.5 }; });
+  anims.push((t) => dols.forEach(({ d, ph }) => {
+    const a = t * 0.22 + ph * 0.9; const cx = 40, cz = 56, r = 7;
+    d.position.x = cx + Math.cos(a) * r; d.position.z = cz + Math.sin(a) * r;
+    const p = ((t * 0.42 + ph) % 1);
+    if (p < 0.5) { const k = p / 0.5; d.position.y = Math.sin(Math.PI * k) * 1.9 - 0.25; d.rotation.set(-Math.cos(Math.PI * k) * 0.85, Math.atan2(-Math.sin(a), Math.cos(a)), 0); }
+    else { d.position.y = -1.8; }
+  }));
+  // 跳躍的小魚與水花
+  const FISHC = ['#F2A541', '#5BA3D9', '#C9D3DC', '#E86F5A', '#F2C14E'];
+  const spots = [];
+  for (let k = 0; k < 6; k++) { const th = 60 * k + 12; spots.push(dirOf(th).multiplyScalar(17 + (k % 2) * 1.5)); }
+  for (let k = 0; k < 6; k++) { const th = 30 + 60 * k + (k % 2 ? 9 : -9); spots.push(dirOf(th).multiplyScalar(51 + (k % 3) * 2)); }
+  const ringMat = new THREE.MeshBasicMaterial({ color: '#FFFFFF', transparent: true, opacity: 0, depthWrite: false });
+  const fishes = spots.map((base, i) => {
+    const f = fishMesh(FISHC[i % FISHC.length]); scene.add(f);
+    const ring = new THREE.Mesh(G('splash', () => { const r = new THREE.RingGeometry(0.25, 0.42, 12); r.rotateX(-Math.PI / 2); return r; }), ringMat.clone()); scene.add(ring);
+    return { f, ring, base, dir: dirOf(i * 47), period: 3.6 + (i % 4) * 0.9, ph: (i * 0.37) % 1 };
+  });
+  anims.push((t) => fishes.forEach(({ f, ring, base, dir, period, ph }) => {
+    const p = ((t / period + ph) % 1) * period; const air = 0.75;
+    if (p < air) {
+      const k = p / air; f.visible = true;
+      f.position.set(base.x + dir.x * (k * 1.8 - 0.9), Math.sin(Math.PI * k) * 1.15 - 0.05, base.z + dir.z * (k * 1.8 - 0.9));
+      f.rotation.set(-Math.cos(Math.PI * k) * 0.9, Math.atan2(dir.x, dir.z), 0);
+    } else f.visible = false;
+    const since = p < air ? p : p - air; const at = p < air ? -0.9 : 0.9;
+    const sk = Math.min(1, since / 0.7);
+    ring.position.set(base.x + dir.x * at, 0.32, base.z + dir.z * at); ring.scale.setScalar(1 + sk * 2.4); ring.material.opacity = 0.7 * (1 - sk);
+  }));
+  // 海鷗：空中盤旋（拍翅＋滑翔），也有幾隻停在碼頭
+  const GULLS = [[0, 0, 15, 14, 0.32], [0, 0, 26, 17, -0.24], [-30, 20, 9, 12, 0.4], [32, -14, 11, 13, -0.36], [18, 42, 8, 11, 0.42], [-20, -36, 12, 16, 0.3], [40, 30, 10, 15, -0.3]];
+  const flying = GULLS.map(([cx, cz, r, h, sp], i) => { const m = gullMesh(); m.g.userData.critter = 'gull'; m.g.rotation.order = 'YXZ'; scene.add(m.g); critters.push(m.g); return { ...m, cx, cz, r, h, sp, ph: i * 1.3 }; });
+  anims.push((t) => flying.forEach(({ g, wings, cx, cz, r, h, sp, ph }) => {
+    const a = t * sp + ph; g.position.set(cx + Math.cos(a) * r, h + Math.sin(t * 0.7 + ph) * 0.6, cz + Math.sin(a) * r);
+    const dir = Math.sign(sp); g.rotation.set(0, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir), -dir * 0.32);
+    const flap = Math.sin(t * 0.45 + ph) > -0.2 ? 1 : 0.12;
+    wings.forEach(({ pv, sx }) => { pv.rotation.z = sx * (Math.sin(t * 9 + ph) * 0.55 * flap + 0.08); });
+  }));
+  perches.forEach((p, i) => {
+    if (i % 2) return;
+    const m = gullMesh(); m.g.position.copy(p); m.g.rotation.y = i * 1.1; m.g.scale.setScalar(0.75); m.g.userData.critter = 'gull'; scene.add(m.g); critters.push(m.g);
+    m.wings.forEach(({ pv, sx }) => { pv.rotation.y = -sx * 1.35; pv.rotation.z = sx * 0.15; pv.scale.set(0.55, 1, 1); });
+    const head = m.g.children[1];
+    anims.push((t) => { head.position.y = 0.12 + Math.max(0, Math.sin(t * 1.7 + i)) * 0.06; m.g.rotation.y = i * 1.1 + Math.sin(t * 0.4 + i) * 0.4; });
+  });
+}
+
 /* ---------- time of day ---------- */
 const TIMES = {
   dawn: { sky: '#F2C8AA', hs: '#FFE2C6', hg: '#8A6A55', hi: 1.1, sun: '#FFB27A', si: 1.9, pos: [95, 42, 35], water: '#5E9FA6', glow: 0.45 },
@@ -1164,6 +1290,7 @@ function init3D() {
   const fp = new THREE.InstancedMesh(new THREE.BoxGeometry(0.12, 0.6, 0.12), M('#FBF4EA'), fenceMats.length);
   fenceMats.forEach((m, i) => fp.setMatrixAt(i, m)); fp.castShadow = true; fp.receiveShadow = true; world.add(fp);
   scenery();
+  animals();
 
   anims.push((t, dt) => {
     ferries.forEach((fr) => {
@@ -1627,15 +1754,24 @@ function pickIsland(cx, cy) {
   for (const h of hits) { let o = h.object; while (o && !o.userData.id) o = o.parent; if (o) return o.userData.id; }
   return null;
 }
+function pickCritter(cx, cy) {
+  ndc.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(critters, true);
+  for (const h of hits) { let o = h.object; while (o && !o.userData.critter) o = o.parent; if (o && o.visible !== false) return o.userData.critter; }
+  return null;
+}
 function bindPicking() {
   const cv = renderer.domElement;
   cv.addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
   cv.addEventListener('pointerup', (e) => {
     if (!downAt) return; const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y); const quick = performance.now() - downAt.t < 450; downAt = null;
-    if (moved > 6 || !quick) return; const id = pickIsland(e.clientX, e.clientY); if (id && (state.island !== id || state.mode !== 'island')) openIsland(id);
+    if (moved > 6 || !quick) return;
+    const kind = pickCritter(e.clientX, e.clientY);
+    if (kind) { toast(`${{ whale: '🐋 鯨魚', dolphin: '🐬 海豚', gull: '🕊️ 海鷗' }[kind]}提醒你｜${TIPS[(Math.random() * TIPS.length) | 0]}`); return; }
+    const id = pickIsland(e.clientX, e.clientY); if (id && (state.island !== id || state.mode !== 'island')) openIsland(id);
   });
   let hoverT = 0;
-  cv.addEventListener('pointermove', (e) => { if (e.buttons || performance.now() - hoverT < 80) return; hoverT = performance.now(); cv.style.cursor = pickIsland(e.clientX, e.clientY) ? 'pointer' : 'grab'; });
+  cv.addEventListener('pointermove', (e) => { if (e.buttons || performance.now() - hoverT < 80) return; hoverT = performance.now(); cv.style.cursor = pickIsland(e.clientX, e.clientY) || pickCritter(e.clientX, e.clientY) ? 'pointer' : 'grab'; });
 }
 
 /* main loop */
